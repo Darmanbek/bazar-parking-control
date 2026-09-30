@@ -1,0 +1,119 @@
+/* Global styles. The palette lives in the antd ConfigProvider (app/providers);
+ * what is left here is what a token cannot express. */
+
+* {
+	box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+	margin: 0;
+	padding: 0;
+	min-height: 100vh;
+}
+
+body {
+	font-family: "Onest", system-ui, "Segoe UI", Roboto, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+.mono-num {
+	font-family: "JetBrains Mono", ui-monospace, monospace;
+	font-variant-numeric: tabular-nums;
+}
+
+/* ---- Licence plate (shared/ui/plate-number) ---- *
+ * Always black on white, in both themes: that is what a plate looks like. */
+.plate {
+	display: inline-flex;
+	align-items: stretch;
+	background: #ffffff;
+	color: #111111;
+	border: 2px solid #111111;
+	border-radius: 5px;
+	font-family: "JetBrains Mono", ui-monospace, monospace;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	line-height: 1.25;
+	box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
+	vertical-align: middle;
+	overflow: hidden;
+}
+.plate-flag {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	border-left: 2px solid #111111;
+}
+.plate-flag i {
+	flex: 1;
+	display: block;
+}
+.plate-flag b {
+	position: absolute;
+	inset: auto 0 0;
+	font-size: 0.42em;
+	text-align: center;
+	color: #111111;
+	line-height: 1.2;
+}
+
+/* A live dot next to "auto refresh" — pulses only while polling is on. */
+.live-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: #16a34a;
+	box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.6);
+	animation: live-pulse 1.8s ease-out infinite;
+}
+.live-dot[data-paused="true"] {
+	background: #9ca3af;
+	animation: none;
+}
+@keyframes live-pulse {
+	0% {
+		box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.55);
+	}
+	70% {
+		box-shadow: 0 0 0 8px rgba(22, 163, 74, 0);
+	}
+	100% {
+		box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
+	}
+}
+
+/* Login: asphalt panel with parking-bay lines. */
+.lot-panel {
+	position: absolute;
+	inset: 0;
+	background:
+		repeating-linear-gradient(90deg, transparent 0 118px, rgba(242, 181, 68, 0.22) 118px 121px),
+		radial-gradient(120% 90% at 0% 0%, #2a3242 0%, #161b24 55%, #0f1217 100%);
+}
+.lot-panel::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(180deg, rgba(15, 18, 23, 0) 40%, rgba(15, 18, 23, 0.85) 100%);
+}
+
+.ant-modal {
+	max-width: calc(100vw - 24px);
+}
+
+* {
+	scrollbar-width: thin;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.001ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.001ms !important;
+	}
+}

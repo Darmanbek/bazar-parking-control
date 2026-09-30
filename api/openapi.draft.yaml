@@ -1,0 +1,243 @@
+# Draft API contract for the market parking control.
+#
+# The backend is not ready yet. This file is what the frontend is built against:
+# `npm run gen:draft` turns it into src/shared/api/schema.d.ts, and the MSW mocks
+# (src/app/mocks) answer it. Hand it to the backend as the proposed contract —
+# once the real server publishes /openapi.json, switch to `npm run gen` and any
+# difference surfaces as a TS error at the call site.
+
+openapi: 3.1.0
+info:
+  title: Bazar Avto Control API (draft)
+  version: 0.1.0
+
+paths:
+  /api/v1/auth/login:
+    post:
+      tags: [auth]
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+      responses:
+        "200":
+          description: Access token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TokenResponse" }
+        "401":
+          description: Wrong credentials
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /api/v1/auth/me:
+    get:
+      tags: [auth]
+      operationId: me
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserRead" }
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /api/v1/cars/stats:
+    get:
+      tags: [cars]
+      operationId: carsStats
+      description: Distinct cars seen in the window, split by licence status.
+      parameters:
+        - $ref: "#/components/parameters/DateFrom"
+        - $ref: "#/components/parameters/DateTo"
+      responses:
+        "200":
+          description: Counters
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CarsStats" }
+
+  /api/v1/cars:
+    get:
+      tags: [cars]
+      operationId: listCars
+      description: Cars seen in the window, newest detection first.
+      parameters:
+        - name: search
+          in: query
+          description: Part of the plate number, case- and space-insensitive.
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { $ref: "#/components/schemas/LicenseStatus" }
+        - $ref: "#/components/parameters/DateFrom"
+        - $ref: "#/components/parameters/DateTo"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Page of cars
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CarsPage" }
+
+  /api/v1/cars/{car_id}:
+    get:
+      tags: [cars]
+      operationId: getCar
+      parameters:
+        - $ref: "#/components/parameters/CarId"
+      responses:
+        "200":
+          description: One car
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CarRead" }
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  /api/v1/cars/{car_id}/history:
+    get:
+      tags: [cars]
+      operationId: carHistory
+      description: Every detection of one car, newest first.
+      parameters:
+        - $ref: "#/components/parameters/CarId"
+        - $ref: "#/components/parameters/DateFrom"
+        - $ref: "#/components/parameters/DateTo"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: Page of detections
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CarEventsPage" }
+
+components:
+  parameters:
+    CarId:
+      name: car_id
+      in: path
+      required: true
+      schema: { type: integer }
+    DateFrom:
+      name: date_from
+      in: query
+      description: Inclusive, YYYY-MM-DD.
+      schema: { type: string, format: date }
+    DateTo:
+      name: date_to
+      in: query
+      description: Inclusive, YYYY-MM-DD.
+      schema: { type: string, format: date }
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    PageSize:
+      name: page_size
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 10000, default: 10 }
+
+  schemas:
+    LicenseStatus:
+      type: string
+      enum: [licensed, unlicensed]
+
+    Direction:
+      type: string
+      enum: [in, out]
+
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username: { type: string }
+        password: { type: string }
+
+    TokenResponse:
+      type: object
+      required: [access_token, token_type]
+      properties:
+        access_token: { type: string }
+        token_type: { type: string, example: bearer }
+
+    UserRead:
+      type: object
+      required: [id, username, full_name]
+      properties:
+        id: { type: integer }
+        username: { type: string }
+        full_name: { type: string }
+
+    ErrorResponse:
+      type: object
+      required: [detail]
+      properties:
+        detail: { type: string }
+
+    PageMeta:
+      type: object
+      required: [total, page, page_size]
+      properties:
+        total: { type: integer }
+        page: { type: integer }
+        page_size: { type: integer }
+
+    CarsStats:
+      type: object
+      required: [total, licensed, unlicensed]
+      properties:
+        total: { type: integer }
+        licensed: { type: integer }
+        unlicensed: { type: integer }
+
+    CarRead:
+      type: object
+      required: [id, number, status, first_seen_at, last_seen_at, visits_count, photo_url]
+      properties:
+        id: { type: integer }
+        number: { type: string, description: "Plate as recognised, e.g. 95A123BC" }
+        status: { $ref: "#/components/schemas/LicenseStatus" }
+        first_seen_at: { type: string, format: date-time }
+        last_seen_at: { type: string, format: date-time }
+        visits_count: { type: integer, description: "Detections inside the requested window" }
+        photo_url: { type: string, description: "Photo of the latest detection" }
+
+    CarsPage:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/CarRead" }
+        meta: { $ref: "#/components/schemas/PageMeta" }
+
+    CarEventRead:
+      type: object
+      required: [id, detected_at, direction, photo_url]
+      properties:
+        id: { type: integer }
+        detected_at: { type: string, format: date-time }
+        direction: { $ref: "#/components/schemas/Direction" }
+        photo_url: { type: string }
+
+    CarEventsPage:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/CarEventRead" }
+        meta: { $ref: "#/components/schemas/PageMeta" }

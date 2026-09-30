@@ -1,0 +1,63 @@
+{
+  "name": "bazar-parking-control",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "check:cycles": "madge --circular --extensions ts,tsx --ts-config tsconfig.app.json src",
+    "preview": "vite preview",
+    "gen": "openapi-typescript http://localhost:8000/openapi.json -o src/shared/api/schema.d.ts",
+    "gen:draft": "openapi-typescript api/openapi.draft.yaml -o src/shared/api/schema.d.ts",
+    "format": "prettier --write src"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^6.3.4",
+    "@tanstack/react-query": "^5.104.0",
+    "@tanstack/react-router": "^1.170.40",
+    "antd": "^6.6.5",
+    "dayjs": "^1.11.23",
+    "exceljs": "^4.4.0",
+    "i18next": "^26.4.2",
+    "openapi-fetch": "^0.17.0",
+    "openapi-react-query": "^0.5.4",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-i18next": "^17.0.15",
+    "use-debounce": "^10.1.1",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.29.7",
+    "@eslint/js": "^9.39.5",
+    "@rolldown/plugin-babel": "^0.2.3",
+    "@tanstack/react-query-devtools": "^5.104.0",
+    "@tanstack/react-router-devtools": "^1.167.2",
+    "@tanstack/router-plugin": "^1.168.41",
+    "@types/babel__core": "^7.20.5",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.6",
+    "globals": "^17.12.0",
+    "madge": "^8.0.0",
+    "msw": "^3.0.0",
+    "openapi-typescript": "^7.13.0",
+    "prettier": "^3.9.9",
+    "typescript": "~5.9",
+    "typescript-eslint": "^8.69.0",
+    "vite": "^8.3.0"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
+  }
+}
