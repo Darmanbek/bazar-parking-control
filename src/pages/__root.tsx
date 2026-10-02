@@ -5,28 +5,31 @@ import type { RootSearch } from "src/shared/hooks/use-search-params.ts"
 // `_layout`, and `/login` renders full-screen beside it.
 //
 // `validateSearch` is declared once, here, so every route inherits one typed
-// query schema. TanStack JSON-parses search values, so `?search=123` arrives as
-// a number and `?page=abc` as a string: both are normalised to what RootSearch
-// promises, and an unusable page number is dropped so the default applies.
-const toPage = (value: unknown): number | undefined => {
+// query schema. TanStack JSON-parses search values (`?q=123` arrives as a
+// number), so each field is normalised to what RootSearch promises and anything
+// unusable is dropped so the screen's default applies. Range checks against the
+// view window happen on the screens, which know it from GET me.
+const toPositiveInt = (value: unknown): number | undefined => {
 	const parsed = Number(value)
-	return value && Number.isFinite(parsed) && parsed > 0 ? parsed : undefined
+	return value && Number.isInteger(parsed) && parsed > 0 ? parsed : undefined
 }
-
-const toStatus = (value: unknown): RootSearch["status"] =>
-	value === "licensed" || value === "unlicensed" ? value : undefined
 
 const toDate = (value: unknown): string | undefined =>
 	typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : undefined
 
+const toStatus = (value: unknown): RootSearch["status"] =>
+	value === "permitted" || value === "expired" ? value : undefined
+
 export const Route = createRootRoute({
 	component: () => <Outlet />,
 	validateSearch: (search: Record<string, unknown>): RootSearch => ({
-		page: toPage(search.page),
-		page_size: toPage(search.page_size),
-		search: search.search === undefined || search.search === "" ? undefined : String(search.search),
+		page: toPositiveInt(search.page),
+		per_page: toPositiveInt(search.per_page),
+		date: toDate(search.date),
 		status: toStatus(search.status),
-		date_from: toDate(search.date_from),
-		date_to: toDate(search.date_to),
+		min_days: toPositiveInt(search.min_days),
+		min_visits: toPositiveInt(search.min_visits),
+		q: search.q === undefined || search.q === "" ? undefined : String(search.q),
+		import_id: toPositiveInt(search.import_id),
 	}),
 })

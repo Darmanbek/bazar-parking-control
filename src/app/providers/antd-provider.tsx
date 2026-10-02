@@ -2,15 +2,11 @@ import { App as AntdApp, ConfigProvider, theme } from "antd"
 import type { ThemeConfig } from "antd"
 import type { AliasToken } from "antd/es/theme/interface"
 import ruRU from "antd/locale/ru_RU"
-import dayjs from "dayjs"
-import "dayjs/locale/ru"
 import { useEffect } from "react"
 import type { FC, ReactNode } from "react"
 import { useThemeStore } from "src/shared/store"
 
-dayjs.locale("ru")
-
-const FONT = "'Onest', system-ui, 'Segoe UI', Roboto, sans-serif"
+const FONT = "'Onest Variable', system-ui, 'Segoe UI', Roboto, sans-serif"
 
 /* "Asphalt & signal": a graphite shell for the operator's screen, one amber
  * signal colour for what is active, and the two status colours (green/red)
@@ -67,6 +63,19 @@ const buildTheme = (isDark: boolean): ThemeConfig => ({
 			headerColor: isDark ? "rgba(230,232,236,0.6)" : "#5b6270",
 			rowHoverBg: isDark ? "rgba(242,181,68,0.06)" : "#fbf7ee",
 			cellPaddingBlock: 10,
+		},
+		// The header menu sits on graphite in both themes; its colours are set
+		// outright rather than derived (dark mode's colorTextLightSolid is dark).
+		Menu: {
+			darkItemBg: "transparent",
+			darkPopupBg: "#1f242d",
+			darkItemColor: "rgba(255,255,255,0.72)",
+			darkItemHoverColor: "#ffffff",
+			darkItemHoverBg: "rgba(255,255,255,0.06)",
+			darkItemSelectedBg: "rgba(242,181,68,0.16)",
+			darkItemSelectedColor: "#f2b544",
+			horizontalItemSelectedColor: "#f2b544",
+			itemBorderRadius: 8,
 		},
 		Button: {
 			primaryShadow: "none",

@@ -1,0 +1,819 @@
+# Route control (sb-km8n) — the inspector panel contract, transcribed from
+# docs/frontend-integration.md §7. That document is the source of truth: field
+# names and codes are frozen there (Q25). When it changes, change this file and
+# run `npm run gen` — any drift surfaces as a TS error at the call site.
+#
+# Paths are relative to `${VITE_API_BASE_URL}/api/v1/route-control`.
+
+openapi: 3.1.0
+info:
+  title: Route control — inspector panel API
+  version: "sb-km8n.1"
+
+paths:
+  /auth/login:
+    post:
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+      responses:
+        "200":
+          description: Token
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/LoginResult" }
+        "401": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "429": { $ref: "#/components/responses/Error" }
+
+  /auth/logout:
+    post:
+      operationId: logout
+      responses:
+        "204": { description: Token revoked }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /me:
+    get:
+      operationId: me
+      responses:
+        "200":
+          description: Profile, scope and limits
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/Me" }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /routes:
+    get:
+      operationId: listRoutes
+      parameters:
+        - $ref: "#/components/parameters/Date"
+      responses:
+        "200":
+          description: Routes with the contract current on `date`
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/RouteListItem" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /routes/{id}:
+    get:
+      operationId: getRoute
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Route with every contract and the assignment history
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/RouteDetail" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /registry/imports:
+    post:
+      operationId: uploadImport
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "201":
+          description: Preview
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/Import" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "429": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
+
+  /registry/imports/{id}:
+    get:
+      operationId: getImport
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Preview (with rows) or the confirmed summary (without rows)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/Import" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /registry/imports/{id}/confirm:
+    post:
+      operationId: confirmImport
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Confirmed summary
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/Import" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /assignments:
+    post:
+      operationId: addAssignment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AssignmentCreate" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, warnings]
+                properties:
+                  data: { $ref: "#/components/schemas/Assignment" }
+                  warnings:
+                    type: array
+                    items: { $ref: "#/components/schemas/Warning" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /assignments/{id}/close:
+    post:
+      operationId: closeAssignment
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [until]
+              properties:
+                until: { type: string, format: date, description: "EXCLUSIVE: first day the assignment no longer applies" }
+      responses:
+        "200":
+          description: Closed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { $ref: "#/components/schemas/Assignment" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /assignments/{id}/correct:
+    post:
+      operationId: correctAssignment
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [plate]
+              properties:
+                plate: { type: string }
+                reason: { type: string, maxLength: 500 }
+      responses:
+        "200":
+          description: Corrected
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data, correction]
+                properties:
+                  data: { $ref: "#/components/schemas/Assignment" }
+                  correction:
+                    type: object
+                    required: [previous_plate, new_plate, recomputed_visits_count]
+                    properties:
+                      previous_plate: { type: string }
+                      new_plate: { type: string }
+                      recomputed_visits_count: { type: integer }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /passes:
+    get:
+      operationId: listPasses
+      parameters:
+        - $ref: "#/components/parameters/Date"
+        - name: status
+          in: query
+          schema: { type: string, enum: [permitted, expired] }
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: Visits of registry plates on `date`
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PassesPage" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /candidates:
+    get:
+      operationId: listCandidates
+      parameters:
+        - $ref: "#/components/parameters/Date"
+        - name: min_days
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 29 }
+        - name: min_visits
+          in: query
+          schema: { type: integer, minimum: 1 }
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+      responses:
+        "200":
+          description: Repeating plates that are not in the registry
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CandidatesPage" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /summary/routes:
+    get:
+      operationId: routesSummary
+      parameters:
+        - $ref: "#/components/parameters/Date"
+      responses:
+        "200":
+          description: Per-route summary for `date`
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoutesSummary" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /passes/{id}/image:
+    get:
+      operationId: passImage
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - $ref: "#/components/parameters/Date"
+      responses:
+        "200":
+          description: Snapshot
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /exports/passes:
+    get:
+      operationId: exportPasses
+      parameters:
+        - $ref: "#/components/parameters/Date"
+        - name: status
+          in: query
+          schema: { type: string, enum: [permitted, expired] }
+      responses:
+        "200":
+          description: xlsx
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema: { type: string, format: binary }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+  /exports/candidates:
+    get:
+      operationId: exportCandidates
+      parameters:
+        - $ref: "#/components/parameters/Date"
+        - name: min_days
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 29 }
+        - name: min_visits
+          in: query
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: xlsx
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema: { type: string, format: binary }
+        "422": { $ref: "#/components/responses/ValidationError" }
+
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer }
+    Date:
+      name: date
+      in: query
+      description: Y-m-d, Asia/Tashkent calendar day.
+      schema: { type: string, format: date }
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1 }
+    PerPage:
+      name: per_page
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 200 }
+
+  responses:
+    Error:
+      description: Error with an optional machine code
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }
+        code: { type: string }
+        reason: { type: string }
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items: { type: string }
+        conflict: { $ref: "#/components/schemas/PlateConflict" }
+
+    PlateConflict:
+      type: object
+      required: [assignment_id, route_number, from, until]
+      properties:
+        assignment_id: { type: integer }
+        route_number: { type: string }
+        from: { type: string, format: date }
+        until: { type: [string, "null"], format: date }
+
+    PassStatus:
+      type: string
+      enum: [permitted, expired, not_in_registry]
+
+    ExpiredReason:
+      type: string
+      enum: [assignment_closed, contract_expired]
+
+    RegistryState:
+      type: string
+      enum: [maintained, not_maintained]
+
+    LoginRequest:
+      type: object
+      required: [login, password]
+      properties:
+        login: { type: string }
+        password: { type: string }
+
+    LoginResult:
+      type: object
+      required: [token, token_type, expires_at, user]
+      properties:
+        token: { type: string }
+        token_type: { type: string }
+        expires_at: { type: string, format: date-time }
+        user:
+          type: object
+          required: [id, name, role]
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            role: { type: string }
+
+    Me:
+      type: object
+      required: [id, name, login, role, account_expires_at, scope, registry, limits]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        login: { type: string }
+        role: { type: string }
+        account_expires_at: { type: string, format: date-time }
+        scope:
+          type: object
+          required: [markets]
+          properties:
+            markets:
+              type: array
+              items:
+                type: object
+                required: [id, name]
+                properties:
+                  id: { type: integer }
+                  name: { type: string }
+        registry:
+          type: object
+          required: [first_import_date]
+          properties:
+            first_import_date: { type: [string, "null"], format: date }
+        limits:
+          type: object
+          required: [view_window_days, visit_gap_minutes, candidates]
+          properties:
+            view_window_days: { type: integer }
+            visit_gap_minutes: { type: integer }
+            candidates:
+              type: object
+              required: [window_days, floor_min_days, floor_min_visits]
+              properties:
+                window_days: { type: integer }
+                floor_min_days: { type: integer }
+                floor_min_visits: { type: integer }
+
+    RouteRef:
+      type: object
+      required: [id, number, name]
+      properties:
+        id: { type: integer }
+        number: { type: string }
+        name: { type: string }
+
+    Contract:
+      type: object
+      required: [id, carrier, valid_from, valid_until, quota]
+      properties:
+        id: { type: integer }
+        carrier: { type: string }
+        valid_from: { type: string, format: date }
+        valid_until: { type: string, format: date, description: "INCLUSIVE: last day of the contract" }
+        quota: { type: integer }
+
+    RouteListItem:
+      type: object
+      required: [id, number, name, contract, assigned_count, over_quota]
+      properties:
+        id: { type: integer }
+        number: { type: string }
+        name: { type: string }
+        contract:
+          oneOf:
+            - $ref: "#/components/schemas/Contract"
+            - type: "null"
+        assigned_count: { type: integer }
+        over_quota: { type: boolean }
+
+    Correction:
+      type: object
+      required: [corrected_at, corrected_by, previous_plate, recomputed_visits_count, reason]
+      properties:
+        corrected_at: { type: string, format: date-time }
+        corrected_by: { type: string }
+        previous_plate: { type: string }
+        recomputed_visits_count: { type: integer }
+        reason: { type: [string, "null"] }
+
+    AssignmentHistoryItem:
+      type: object
+      required: [id, plate, original_plate, from, until, corrections]
+      properties:
+        id: { type: integer }
+        plate: { type: string }
+        original_plate: { type: string }
+        from: { type: string, format: date, description: "INCLUSIVE" }
+        until: { type: [string, "null"], format: date, description: "EXCLUSIVE; null = open" }
+        corrections:
+          type: array
+          items: { $ref: "#/components/schemas/Correction" }
+
+    Assignment:
+      allOf:
+        - $ref: "#/components/schemas/AssignmentHistoryItem"
+        - type: object
+          required: [contract_id, route_id]
+          properties:
+            contract_id: { type: integer }
+            route_id: { type: integer }
+
+    ContractWithAssignments:
+      allOf:
+        - $ref: "#/components/schemas/Contract"
+        - type: object
+          required: [assignments]
+          properties:
+            assignments:
+              type: array
+              items: { $ref: "#/components/schemas/AssignmentHistoryItem" }
+
+    RouteDetail:
+      type: object
+      required: [id, number, name, contracts]
+      properties:
+        id: { type: integer }
+        number: { type: string }
+        name: { type: string }
+        contracts:
+          type: array
+          items: { $ref: "#/components/schemas/ContractWithAssignments" }
+
+    AssignmentCreate:
+      type: object
+      required: [contract_id, plate, from]
+      properties:
+        contract_id: { type: integer }
+        plate: { type: string }
+        from: { type: string, format: date }
+
+    Warning:
+      type: object
+      required: [code]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        quota: { type: integer }
+        assigned_count: { type: integer }
+
+    ImportSummary:
+      type: object
+      required:
+        [routes_new, contracts_new, contracts_changed, assignments_add, assignments_close, assignments_move, assignments_reopen, unchanged, errors_count, warnings_count]
+      properties:
+        routes_new: { type: integer }
+        contracts_new: { type: integer }
+        contracts_changed: { type: integer }
+        assignments_add: { type: integer }
+        assignments_close: { type: integer }
+        assignments_move: { type: integer }
+        assignments_reopen: { type: integer }
+        unchanged: { type: integer }
+        errors_count: { type: integer }
+        warnings_count: { type: integer }
+
+    ImportAction:
+      type: string
+      enum: [new_route, new_contract, add_assignment, close_assignment, move_assignment, reopen_assignment, unchanged, error]
+
+    RowIssue:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        quota: { type: integer }
+        assigned_count: { type: integer }
+
+    ImportRow:
+      type: object
+      required: [row, route_number, carrier, plate, action, from, until, errors, warnings]
+      properties:
+        row: { type: [integer, "null"] }
+        assignment_id: { type: integer }
+        previous_contract_id: { type: integer }
+        from_route_number: { type: string }
+        route_number: { type: [string, "null"] }
+        carrier: { type: [string, "null"] }
+        plate: { type: [string, "null"] }
+        action: { $ref: "#/components/schemas/ImportAction" }
+        from: { type: [string, "null"], format: date }
+        until: { type: [string, "null"], format: date }
+        errors:
+          type: array
+          items: { $ref: "#/components/schemas/RowIssue" }
+        warnings:
+          type: array
+          items: { $ref: "#/components/schemas/RowIssue" }
+
+    Import:
+      type: object
+      required: [id, status, file_name, created_at, expires_at, effective_date, summary, can_confirm]
+      properties:
+        id: { type: integer }
+        status: { type: string, enum: [previewed, confirmed] }
+        file_name: { type: string }
+        created_at: { type: string, format: date-time }
+        expires_at: { type: [string, "null"], format: date-time }
+        confirmed_at: { type: [string, "null"], format: date-time }
+        effective_date: { type: string, format: date }
+        summary: { $ref: "#/components/schemas/ImportSummary" }
+        can_confirm: { type: boolean }
+        rows:
+          description: Absent once confirmed.
+          type: array
+          items: { $ref: "#/components/schemas/ImportRow" }
+
+    Others:
+      type: object
+      required: [plates_count, visits_count]
+      properties:
+        plates_count: { type: integer }
+        visits_count: { type: integer }
+
+    PageLinks:
+      type: object
+      properties:
+        first: { type: [string, "null"] }
+        last: { type: [string, "null"] }
+        prev: { type: [string, "null"] }
+        next: { type: [string, "null"] }
+
+    Pass:
+      type: object
+      required: [id, plate, visited_at, frames_count, status, expired_reason, route, contract, assignment]
+      properties:
+        id: { type: integer }
+        plate: { type: string }
+        visited_at: { type: string, format: date-time }
+        frames_count: { type: integer }
+        status: { type: string, enum: [permitted, expired] }
+        expired_reason:
+          oneOf:
+            - $ref: "#/components/schemas/ExpiredReason"
+            - type: "null"
+        route: { $ref: "#/components/schemas/RouteRef" }
+        contract:
+          type: object
+          required: [id, carrier, valid_from, valid_until]
+          properties:
+            id: { type: integer }
+            carrier: { type: string }
+            valid_from: { type: string, format: date }
+            valid_until: { type: string, format: date }
+        assignment:
+          type: object
+          required: [id, from, until]
+          properties:
+            id: { type: integer }
+            from: { type: string, format: date }
+            until: { type: [string, "null"], format: date }
+
+    PassesPage:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Pass" }
+        links: { $ref: "#/components/schemas/PageLinks" }
+        meta:
+          type: object
+          required: [current_page, per_page, total, date, registry_state, others]
+          properties:
+            current_page: { type: integer }
+            per_page: { type: integer }
+            total: { type: integer }
+            date: { type: string, format: date }
+            registry_state: { $ref: "#/components/schemas/RegistryState" }
+            others:
+              oneOf:
+                - $ref: "#/components/schemas/Others"
+                - type: "null"
+
+    CandidateDay:
+      type: object
+      required: [date, visits_count, qualifies]
+      properties:
+        date: { type: string, format: date }
+        visits_count: { type: integer }
+        qualifies: { type: boolean }
+
+    Candidate:
+      type: object
+      required: [plate, status, qualifying_days, total_visits, first_seen_date, last_seen_date, last_pass, days]
+      properties:
+        plate: { type: string }
+        status: { type: string, enum: [not_in_registry] }
+        qualifying_days: { type: integer }
+        total_visits: { type: integer }
+        first_seen_date: { type: string, format: date }
+        last_seen_date: { type: string, format: date }
+        last_pass:
+          oneOf:
+            - type: object
+              required: [id, visited_at]
+              properties:
+                id: { type: integer }
+                visited_at: { type: string, format: date-time }
+            - type: "null"
+        days:
+          type: array
+          items: { $ref: "#/components/schemas/CandidateDay" }
+
+    Thresholds:
+      type: object
+      required: [window_days, min_days, min_visits, floor_min_days, floor_min_visits]
+      properties:
+        window_days: { type: integer }
+        min_days: { type: integer }
+        min_visits: { type: integer }
+        floor_min_days: { type: integer }
+        floor_min_visits: { type: integer }
+
+    CandidatesPage:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/Candidate" }
+        links: { $ref: "#/components/schemas/PageLinks" }
+        meta:
+          type: object
+          required: [current_page, per_page, total, date, registry_state, thresholds, others]
+          properties:
+            current_page: { type: integer }
+            per_page: { type: integer }
+            total: { type: integer }
+            date: { type: string, format: date }
+            registry_state: { $ref: "#/components/schemas/RegistryState" }
+            thresholds: { $ref: "#/components/schemas/Thresholds" }
+            others:
+              oneOf:
+                - $ref: "#/components/schemas/Others"
+                - type: "null"
+
+    RouteSummaryItem:
+      type: object
+      required: [route, carrier, quota, assigned_count, seen_assigned_count, unseen_30d_count, over_quota, no_active_contract]
+      properties:
+        route: { $ref: "#/components/schemas/RouteRef" }
+        carrier: { type: [string, "null"] }
+        quota: { type: [integer, "null"] }
+        assigned_count: { type: integer }
+        seen_assigned_count: { type: integer }
+        unseen_30d_count: { type: integer }
+        over_quota: { type: boolean }
+        no_active_contract: { type: boolean }
+
+    SummaryTotals:
+      type: object
+      required: [assigned_count, seen_assigned_count, unseen_30d_count]
+      properties:
+        assigned_count: { type: integer }
+        seen_assigned_count: { type: integer }
+        unseen_30d_count: { type: integer }
+
+    RoutesSummary:
+      type: object
+      required: [data, totals, meta]
+      properties:
+        data:
+          type: array
+          items: { $ref: "#/components/schemas/RouteSummaryItem" }
+        totals:
+          oneOf:
+            - $ref: "#/components/schemas/SummaryTotals"
+            - type: "null"
+        meta:
+          type: object
+          required: [date, registry_state, others]
+          properties:
+            date: { type: string, format: date }
+            registry_state: { $ref: "#/components/schemas/RegistryState" }
+            others:
+              oneOf:
+                - $ref: "#/components/schemas/Others"
+                - type: "null"

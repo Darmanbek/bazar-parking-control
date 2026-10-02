@@ -1,16 +1,24 @@
-// Sign-in. Split layout on desktop: the asphalt "lot" panel on the left, the
-// form on the right; the panel drops away on smaller screens.
+// Sign-in (§4.1, §7.1): `login` + password, then GET me. Split layout on
+// desktop — the asphalt panel on the left, the form on the right.
+//
+// What the screen may say is fixed by the contract: a wrong login, an unknown
+// account and a foreign role all answer the same 422, so one message covers
+// them; the account's state (`account_expired` / `account_revoked`) arrives only
+// after a correct password; `too_many_attempts` is a temporary lock. The reason
+// a previous session ended (a 401 elsewhere) is shown once on arrival.
 
 import { LockOutlined, UserOutlined } from "@ant-design/icons"
+import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { Alert, Button, Flex, Form, Input, Typography } from "antd"
 import type { FC } from "react"
+import { useState } from "react"
 import { useTranslation } from "react-i18next"
 import { $api, type Schemas } from "src/shared/api"
-import { USE_MOCKS } from "src/shared/config"
-import { useMessage, useResponsive, useToken } from "src/shared/hooks"
+import { useResponsive, useToken } from "src/shared/hooks"
+import { errorCode, errorCodeText, fieldErrors, getErrorMessage } from "src/shared/lib"
 import { Brandmark, PlateNumber } from "src/shared/ui"
-import { tokenStorage } from "src/shared/utils"
+import { logoutReason, tokenStorage } from "src/shared/utils"
 
 const { Title, Text } = Typography
 
@@ -40,17 +48,18 @@ const BrandPanel: FC = () => {
 				</Flex>
 
 				<div>
+					{/* Sample plates in the contract's own placeholder form — never real ones (TZ §5). */}
 					<Flex
 						gap={10}
 						wrap={"wrap"}
 						style={{ marginBottom: 28 }}
 					>
 						<PlateNumber
-							number={"95A777AA"}
+							number={"00A000AA"}
 							size={"large"}
 						/>
 						<PlateNumber
-							number={"95123ABC"}
+							number={"00B222BB"}
 							size={"large"}
 						/>
 					</Flex>
@@ -101,20 +110,40 @@ const BrandPanel: FC = () => {
 export const LoginPage: FC = () => {
 	const { t } = useTranslation()
 	const navigate = useNavigate()
+	const queryClient = useQueryClient()
 	const { token } = useToken()
-	const { message } = useMessage()
 	const { isDesktop } = useResponsive()
 	const [form] = Form.useForm<LoginForm>()
+	// Why the previous session ended, if it was ended by the server.
+	const [previousReason] = useState(() => logoutReason.take())
 
-	// Silent: a wrong password is answered inline under the title, not as a toast.
-	const login = $api.useMutation("post", "/api/v1/auth/login", {
+	// Silent: every login error is answered inline, not as a toast.
+	const login = $api.useMutation("post", "/auth/login", {
 		meta: { silent: true },
-		onSuccess: (data) => {
-			tokenStorage.set(data.access_token)
-			message.success({ title: t("auth.welcome") })
+		onSuccess: (response) => {
+			const { token: accessToken, expires_at } = response.data
+			tokenStorage.set(accessToken, expires_at)
+			// A new identity: nothing of a previous session's cache may survive.
+			queryClient.clear()
 			void navigate({ to: "/" })
 		},
+		onError: (error) => {
+			// 422: one message for every "no such login / wrong password / wrong role".
+			const fields = fieldErrors(error)
+			if (fields.length) form.setFields(fields.map((f) => ({ ...f, name: f.name as keyof LoginForm })))
+		},
 	})
+
+	const code = errorCode(login.error)
+	const loginAlert = login.isError
+		? code
+			? (errorCodeText(code) ?? getErrorMessage(login.error, t("errors.server")))
+			: fieldErrors(login.error).length
+				? undefined
+				: getErrorMessage(login.error, t("errors.server"))
+		: previousReason
+			? errorCodeText(previousReason)
+			: undefined
 
 	return (
 		<Flex style={{ minHeight: "100vh", background: token.colorBgLayout }}>
@@ -142,11 +171,11 @@ export const LoginPage: FC = () => {
 					</Title>
 					<Text type={"secondary"}>{t("auth.subtitle")}</Text>
 
-					{login.isError ? (
+					{loginAlert ? (
 						<Alert
-							type={"error"}
+							type={login.isError ? "error" : "warning"}
 							showIcon={true}
-							title={t("auth.wrong_credentials")}
+							title={loginAlert}
 							style={{ marginTop: 20 }}
 						/>
 					) : null}
@@ -160,9 +189,9 @@ export const LoginPage: FC = () => {
 						onFinish={(body) => login.mutate({ body })}
 					>
 						<Form.Item<LoginForm>
-							name={"username"}
-							label={t("auth.username")}
-							rules={[{ required: true, message: t("auth.username_required") }]}
+							name={"login"}
+							label={t("auth.login")}
+							rules={[{ required: true, message: t("auth.login_required") }]}
 						>
 							<Input
 								prefix={<UserOutlined />}
@@ -190,15 +219,6 @@ export const LoginPage: FC = () => {
 							{t("auth.submit")}
 						</Button>
 					</Form>
-
-					{USE_MOCKS ? (
-						<Text
-							type={"secondary"}
-							style={{ display: "block", marginTop: 20, fontSize: 13, textAlign: "center" }}
-						>
-							{t("auth.demo_hint")}
-						</Text>
-					) : null}
 				</div>
 			</Flex>
 		</Flex>

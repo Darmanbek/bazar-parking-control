@@ -21,7 +21,7 @@ export const useAutoRefreshStore = create<AutoRefreshState>()(
 			setEnabled: (enabled) => set({ enabled }),
 			setInterval: (interval) => set({ interval }),
 		}),
-		{ name: "bazar-avto-refresh" }
+		{ name: "bazar-avto-refresh", version: 2 }
 	)
 )
 

@@ -1,14 +1,13 @@
 // A stand-in camera frame: the rear of a car under the gate camera, with the
 // plate and the timestamp burned in like a real ANPR snapshot.
 
-import type { Schemas } from "src/shared/api"
 import { formatPlate } from "src/shared/utils"
 
 const PALETTE = ["#3b4252", "#8a1c1c", "#d1d5db", "#1e3a5f", "#2f4f3a", "#6b7280", "#111827", "#b45309"]
 
-export const renderPhoto = (plate: string, carId: number, stamp: string, direction: Schemas["Direction"]): string => {
-	const body = PALETTE[carId % PALETTE.length]
-	const gate = direction === "in" ? "ВЪЕЗД" : "ВЫЕЗД"
+export const renderPhoto = (plate: string, seed: number, stamp: string): string => {
+	const body = PALETTE[seed % PALETTE.length]
+	const gate = "ВЪЕЗД"
 	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="320" height="200">
   <defs>
     <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">

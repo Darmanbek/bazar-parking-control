@@ -1,44 +1,45 @@
-# Контроль стоянки рынка
+# Маршрутный контроль — панель инспектора
 
-Пульт охраны автостоянки: дашборд (всего / лицензированных / нелицензированных машин), живая таблица машин за период, карточка одной машины с историей заездов, выгрузка в Excel.
+Фронтенд панели `ROUTE_INSPECTOR` для поверхности `/api/v1/route-control/*`.
+Контракт API (frontend-integration.md) и ТЗ выдаёт команда бэкенда; в репозиторий они не кладутся — репозиторий публичный, а документы внутренние. При расхождении прав контракт.
 
 ## Запуск
 
 ```bash
 npm i
-npm run dev        # http://localhost:5173, демо-вход: admin / admin
+npm run dev      # моки MSW: логин inspector / inspector (expired / inspector — истёкший аккаунт)
+npm run build    # прод: VITE_API_BASE_URL из .env.production, без моков
 ```
 
-## Пока нет бэкенда
+| Переменная | Где | Значение |
+|---|---|---|
+| `VITE_API_BASE_URL` | `.env` (dev), `.env.production` (build) | база API без `/api/v1/route-control`; прод — `https://api.smart-bazar.uz` (H8) |
+| `VITE_USE_MOCKS` | `.env` | `true` — отвечать из MSW. В прод-сборке игнорируется: моки и service worker в `dist` не попадают |
 
-- Контракт API — черновик [api/openapi.draft.yaml](api/openapi.draft.yaml). Его стоит отдать бэкенду как предлагаемый контракт.
-- Типы генерируются из него: `npm run gen:draft` → `src/shared/api/schema.d.ts`.
-- Ответы отдаёт MSW (`src/app/mocks`), когда `VITE_USE_MOCKS=true` в `.env`. Моки «живые»: каждые ~6 с на стоянку въезжает или выезжает машина.
+## Экраны (контракт §9)
 
-Когда бэкенд готов:
+| Маршрут | Экран | API |
+|---|---|---|
+| `#/login` | Вход: `login` + пароль, причина выхода по `code` | `POST auth/login`, `GET me` |
+| `#/` | День: сводка по маршрутам, «Остальные» числом, заезды реестра, снимок, xlsx | `GET summary/routes`, `GET passes`, `GET passes/{id}/image`, `GET exports/passes` |
+| `#/candidates` | Кандидаты за закрытый день, K/N по `meta.thresholds`, снимок с тем же `date`, xlsx | `GET candidates`, `GET exports/candidates` |
+| `#/registry` | Реестр: маршруты и договор на дату | `GET routes` |
+| `#/registry/$routeId` | Договоры и история назначений; добавить / закрыть с даты / исправить номер (удаления нет) | `GET routes/{id}`, `POST assignments*` |
+| `#/import` | Загрузка Excel → предпросмотр → подтверждение | `POST registry/imports`, `GET …/{id}`, `POST …/{id}/confirm` |
 
-1. В `.env`: `VITE_API_URL=<адрес бэкенда>`, `VITE_USE_MOCKS=false`.
-2. Поправить URL в скрипте `gen` в `package.json` и запустить `npm run gen` — расхождения с черновиком всплывут ошибками TypeScript в местах вызова.
+## Как выполнены требования хостинга (ADR-0033)
 
-## Страницы
+- Только статика, без functions, middleware и `rewrites` (H2): роутинг на **hash** (`/#/…`), поэтому Vercel не нужен SPA-fallback.
+- Браузер ходит в API напрямую с `Authorization: Bearer` и `Accept: application/json`, cookie не используются.
+- Шрифты включены в сборку (`@fontsource`), Google Fonts не используется (H6).
+- Снимки и xlsx получаются через `fetch` → Blob → `URL.createObjectURL`, URL освобождается при закрытии. В `localStorage` лежат только токен, его `expires_at` и настройки UI (§5.5).
+- Автообновление — только для сегодняшнего дня и не чаще раза в минуту; повторов запросов нет (`retry: false`): каждое чтение пишется в аудит (§5.4).
+- Ошибки показываются по `code` / `reason` (§5.6). Любой `401` очищает токен и возвращает на вход с причиной.
 
-| Маршрут | Что там |
-|---|---|
-| `/login` | Авторизация |
-| `/` | Дашборд: 3 счётчика (они же фильтр по статусу), таблица, фильтр по датам, поиск по номеру, автообновление, Excel |
-| `/cars/$carId` | Карточка машины: последний снимок, статус, история заездов за период, Excel |
+## Типы API
 
-Все фильтры (даты, статус, поиск, страница) лежат в URL — отфильтрованный вид переживает перезагрузку, ссылкой можно поделиться.
+`api/openapi.yaml` — контракт §7 в виде OpenAPI. `npm run gen` → `src/shared/api/schema.d.ts`. При правке контракта правится этот файл, расхождения всплывают ошибками TypeScript.
 
 ## Архитектура
 
-Custom FSD: `app → pages → features → widgets → shared` (импорты только вниз, проверяет `npm run lint`).
-
-- `src/pages` — файловые маршруты TanStack Router (тонкие).
-- `src/features/{auth,cars,car}` — страницы.
-- `src/widgets` — переиспользуемые блоки: `actions`, `car`, `layout`, `shared`, `router-boundary`.
-- `src/shared` — `$api` (openapi-fetch + openapi-react-query), хуки, сторы (zustand), UI.
-
-## Скрипты
-
-`dev` · `build` · `lint` · `check:cycles` · `gen` · `gen:draft` · `format`
+Custom FSD: `app → pages → features → widgets → shared`, импорты только вниз (проверяет `npm run lint`), циклы — `npm run check:cycles`.

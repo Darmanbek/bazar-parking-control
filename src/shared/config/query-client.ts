@@ -1,20 +1,21 @@
 import { QueryClient } from "@tanstack/react-query"
 
-// Toasts and invalidation are NOT here — they live in the $api wrapper
-// (shared/api/api.query.ts), which can read React context. This file only holds
-// the client and its defaults.
+// Toasts and invalidation live in the $api wrapper (shared/api/api.query.ts);
+// this file only holds the client and its defaults.
 //
-// `refetchOnMount: true` pairs with the wrapper's unfiltered invalidateQueries():
-// with `false`, an invalidated but unmounted query would still serve cache on
-// its next mount. Live screens poll through `refetchInterval` at the call site.
+// `retry: false` on purpose: every GET is written to the audit log (§5.4) and a
+// `503 audit_unavailable` must not be retried in a loop. A failed read shows its
+// error; the user retries by hand. The cache is memory only (§5.5).
 export const queryClient = new QueryClient({
 	defaultOptions: {
 		queries: {
 			refetchOnWindowFocus: false,
 			refetchOnMount: true,
-			staleTime: 1000 * 60 * 60 * 2,
-			retry: 1,
-			retryDelay: 1000,
+			staleTime: 1000 * 60 * 5,
+			retry: false,
+		},
+		mutations: {
+			retry: false,
 		},
 	},
 })

@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-	"/api/v1/auth/login": {
+	"/auth/login": {
 		parameters: {
 			query?: never
 			header?: never
@@ -20,7 +20,23 @@ export interface paths {
 		patch?: never
 		trace?: never
 	}
-	"/api/v1/auth/me": {
+	"/auth/logout": {
+		parameters: {
+			query?: never
+			header?: never
+			path?: never
+			cookie?: never
+		}
+		get?: never
+		put?: never
+		post: operations["logout"]
+		delete?: never
+		options?: never
+		head?: never
+		patch?: never
+		trace?: never
+	}
+	"/me": {
 		parameters: {
 			query?: never
 			header?: never
@@ -36,15 +52,14 @@ export interface paths {
 		patch?: never
 		trace?: never
 	}
-	"/api/v1/cars/stats": {
+	"/routes": {
 		parameters: {
 			query?: never
 			header?: never
 			path?: never
 			cookie?: never
 		}
-		/** @description Distinct cars seen in the window, split by licence status. */
-		get: operations["carsStats"]
+		get: operations["listRoutes"]
 		put?: never
 		post?: never
 		delete?: never
@@ -53,15 +68,14 @@ export interface paths {
 		patch?: never
 		trace?: never
 	}
-	"/api/v1/cars": {
+	"/routes/{id}": {
 		parameters: {
 			query?: never
 			header?: never
 			path?: never
 			cookie?: never
 		}
-		/** @description Cars seen in the window, newest detection first. */
-		get: operations["listCars"]
+		get: operations["getRoute"]
 		put?: never
 		post?: never
 		delete?: never
@@ -70,14 +84,30 @@ export interface paths {
 		patch?: never
 		trace?: never
 	}
-	"/api/v1/cars/{car_id}": {
+	"/registry/imports": {
 		parameters: {
 			query?: never
 			header?: never
 			path?: never
 			cookie?: never
 		}
-		get: operations["getCar"]
+		get?: never
+		put?: never
+		post: operations["uploadImport"]
+		delete?: never
+		options?: never
+		head?: never
+		patch?: never
+		trace?: never
+	}
+	"/registry/imports/{id}": {
+		parameters: {
+			query?: never
+			header?: never
+			path?: never
+			cookie?: never
+		}
+		get: operations["getImport"]
 		put?: never
 		post?: never
 		delete?: never
@@ -86,15 +116,158 @@ export interface paths {
 		patch?: never
 		trace?: never
 	}
-	"/api/v1/cars/{car_id}/history": {
+	"/registry/imports/{id}/confirm": {
 		parameters: {
 			query?: never
 			header?: never
 			path?: never
 			cookie?: never
 		}
-		/** @description Every detection of one car, newest first. */
-		get: operations["carHistory"]
+		get?: never
+		put?: never
+		post: operations["confirmImport"]
+		delete?: never
+		options?: never
+		head?: never
+		patch?: never
+		trace?: never
+	}
+	"/assignments": {
+		parameters: {
+			query?: never
+			header?: never
+			path?: never
+			cookie?: never
+		}
+		get?: never
+		put?: never
+		post: operations["addAssignment"]
+		delete?: never
+		options?: never
+		head?: never
+		patch?: never
+		trace?: never
+	}
+	"/assignments/{id}/close": {
+		parameters: {
+			query?: never
+			header?: never
+			path?: never
+			cookie?: never
+		}
+		get?: never
+		put?: never
+		post: operations["closeAssignment"]
+		delete?: never
+		options?: never
+		head?: never
+		patch?: never
+		trace?: never
+	}
+	"/assignments/{id}/correct": {
+		parameters: {
+			query?: never
+			header?: never
+			path?: never
+			cookie?: never
+		}
+		get?: never
+		put?: never
+		post: operations["correctAssignment"]
+		delete?: never
+		options?: never
+		head?: never
+		patch?: never
+		trace?: never
+	}
+	"/passes": {
+		parameters: {
+			query?: never
+			header?: never
+			path?: never
+			cookie?: never
+		}
+		get: operations["listPasses"]
+		put?: never
+		post?: never
+		delete?: never
+		options?: never
+		head?: never
+		patch?: never
+		trace?: never
+	}
+	"/candidates": {
+		parameters: {
+			query?: never
+			header?: never
+			path?: never
+			cookie?: never
+		}
+		get: operations["listCandidates"]
+		put?: never
+		post?: never
+		delete?: never
+		options?: never
+		head?: never
+		patch?: never
+		trace?: never
+	}
+	"/summary/routes": {
+		parameters: {
+			query?: never
+			header?: never
+			path?: never
+			cookie?: never
+		}
+		get: operations["routesSummary"]
+		put?: never
+		post?: never
+		delete?: never
+		options?: never
+		head?: never
+		patch?: never
+		trace?: never
+	}
+	"/passes/{id}/image": {
+		parameters: {
+			query?: never
+			header?: never
+			path?: never
+			cookie?: never
+		}
+		get: operations["passImage"]
+		put?: never
+		post?: never
+		delete?: never
+		options?: never
+		head?: never
+		patch?: never
+		trace?: never
+	}
+	"/exports/passes": {
+		parameters: {
+			query?: never
+			header?: never
+			path?: never
+			cookie?: never
+		}
+		get: operations["exportPasses"]
+		put?: never
+		post?: never
+		delete?: never
+		options?: never
+		head?: never
+		patch?: never
+		trace?: never
+	}
+	"/exports/candidates": {
+		parameters: {
+			query?: never
+			header?: never
+			path?: never
+			cookie?: never
+		}
+		get: operations["exportCandidates"]
 		put?: never
 		post?: never
 		delete?: never
@@ -107,76 +280,352 @@ export interface paths {
 export type webhooks = Record<string, never>
 export interface components {
 	schemas: {
+		ErrorResponse: {
+			message: string
+			code?: string
+			reason?: string
+			errors?: {
+				[key: string]: string[]
+			}
+			conflict?: components["schemas"]["PlateConflict"]
+		}
+		PlateConflict: {
+			assignment_id: number
+			route_number: string
+			/** Format: date */
+			from: string
+			/** Format: date */
+			until: string | null
+		}
 		/** @enum {string} */
-		LicenseStatus: "licensed" | "unlicensed"
+		PassStatus: "permitted" | "expired" | "not_in_registry"
 		/** @enum {string} */
-		Direction: "in" | "out"
+		ExpiredReason: "assignment_closed" | "contract_expired"
+		/** @enum {string} */
+		RegistryState: "maintained" | "not_maintained"
 		LoginRequest: {
-			username: string
+			login: string
 			password: string
 		}
-		TokenResponse: {
-			access_token: string
-			/** @example bearer */
+		LoginResult: {
+			token: string
 			token_type: string
+			/** Format: date-time */
+			expires_at: string
+			user: {
+				id: number
+				name: string
+				role: string
+			}
 		}
-		UserRead: {
+		Me: {
 			id: number
-			username: string
-			full_name: string
+			name: string
+			login: string
+			role: string
+			/** Format: date-time */
+			account_expires_at: string
+			scope: {
+				markets: {
+					id: number
+					name: string
+				}[]
+			}
+			registry: {
+				/** Format: date */
+				first_import_date: string | null
+			}
+			limits: {
+				view_window_days: number
+				visit_gap_minutes: number
+				candidates: {
+					window_days: number
+					floor_min_days: number
+					floor_min_visits: number
+				}
+			}
 		}
-		ErrorResponse: {
-			detail: string
-		}
-		PageMeta: {
-			total: number
-			page: number
-			page_size: number
-		}
-		CarsStats: {
-			total: number
-			licensed: number
-			unlicensed: number
-		}
-		CarRead: {
+		RouteRef: {
 			id: number
-			/** @description Plate as recognised, e.g. 95A123BC */
 			number: string
-			status: components["schemas"]["LicenseStatus"]
-			/** Format: date-time */
-			first_seen_at: string
-			/** Format: date-time */
-			last_seen_at: string
-			/** @description Detections inside the requested window */
-			visits_count: number
-			/** @description Photo of the latest detection */
-			photo_url: string
+			name: string
 		}
-		CarsPage: {
-			data: components["schemas"]["CarRead"][]
-			meta: components["schemas"]["PageMeta"]
-		}
-		CarEventRead: {
+		Contract: {
 			id: number
-			/** Format: date-time */
-			detected_at: string
-			direction: components["schemas"]["Direction"]
-			photo_url: string
+			carrier: string
+			/** Format: date */
+			valid_from: string
+			/**
+			 * Format: date
+			 * @description INCLUSIVE: last day of the contract
+			 */
+			valid_until: string
+			quota: number
 		}
-		CarEventsPage: {
-			data: components["schemas"]["CarEventRead"][]
-			meta: components["schemas"]["PageMeta"]
+		RouteListItem: {
+			id: number
+			number: string
+			name: string
+			contract: components["schemas"]["Contract"] | null
+			assigned_count: number
+			over_quota: boolean
+		}
+		Correction: {
+			/** Format: date-time */
+			corrected_at: string
+			corrected_by: string
+			previous_plate: string
+			recomputed_visits_count: number
+			reason: string | null
+		}
+		AssignmentHistoryItem: {
+			id: number
+			plate: string
+			original_plate: string
+			/**
+			 * Format: date
+			 * @description INCLUSIVE
+			 */
+			from: string
+			/**
+			 * Format: date
+			 * @description EXCLUSIVE; null = open
+			 */
+			until: string | null
+			corrections: components["schemas"]["Correction"][]
+		}
+		Assignment: components["schemas"]["AssignmentHistoryItem"] & {
+			contract_id: number
+			route_id: number
+		}
+		ContractWithAssignments: components["schemas"]["Contract"] & {
+			assignments: components["schemas"]["AssignmentHistoryItem"][]
+		}
+		RouteDetail: {
+			id: number
+			number: string
+			name: string
+			contracts: components["schemas"]["ContractWithAssignments"][]
+		}
+		AssignmentCreate: {
+			contract_id: number
+			plate: string
+			/** Format: date */
+			from: string
+		}
+		Warning: {
+			code: string
+			message?: string
+			quota?: number
+			assigned_count?: number
+		}
+		ImportSummary: {
+			routes_new: number
+			contracts_new: number
+			contracts_changed: number
+			assignments_add: number
+			assignments_close: number
+			assignments_move: number
+			assignments_reopen: number
+			unchanged: number
+			errors_count: number
+			warnings_count: number
+		}
+		/** @enum {string} */
+		ImportAction:
+			| "new_route"
+			| "new_contract"
+			| "add_assignment"
+			| "close_assignment"
+			| "move_assignment"
+			| "reopen_assignment"
+			| "unchanged"
+			| "error"
+		RowIssue: {
+			code: string
+			message: string
+			quota?: number
+			assigned_count?: number
+		}
+		ImportRow: {
+			row: number | null
+			assignment_id?: number
+			previous_contract_id?: number
+			from_route_number?: string
+			route_number: string | null
+			carrier: string | null
+			plate: string | null
+			action: components["schemas"]["ImportAction"]
+			/** Format: date */
+			from: string | null
+			/** Format: date */
+			until: string | null
+			errors: components["schemas"]["RowIssue"][]
+			warnings: components["schemas"]["RowIssue"][]
+		}
+		Import: {
+			id: number
+			/** @enum {string} */
+			status: "previewed" | "confirmed"
+			file_name: string
+			/** Format: date-time */
+			created_at: string
+			/** Format: date-time */
+			expires_at: string | null
+			/** Format: date-time */
+			confirmed_at?: string | null
+			/** Format: date */
+			effective_date: string
+			summary: components["schemas"]["ImportSummary"]
+			can_confirm: boolean
+			/** @description Absent once confirmed. */
+			rows?: components["schemas"]["ImportRow"][]
+		}
+		Others: {
+			plates_count: number
+			visits_count: number
+		}
+		PageLinks: {
+			first?: string | null
+			last?: string | null
+			prev?: string | null
+			next?: string | null
+		}
+		Pass: {
+			id: number
+			plate: string
+			/** Format: date-time */
+			visited_at: string
+			frames_count: number
+			/** @enum {string} */
+			status: "permitted" | "expired"
+			expired_reason: components["schemas"]["ExpiredReason"] | null
+			route: components["schemas"]["RouteRef"]
+			contract: {
+				id: number
+				carrier: string
+				/** Format: date */
+				valid_from: string
+				/** Format: date */
+				valid_until: string
+			}
+			assignment: {
+				id: number
+				/** Format: date */
+				from: string
+				/** Format: date */
+				until: string | null
+			}
+		}
+		PassesPage: {
+			data: components["schemas"]["Pass"][]
+			links?: components["schemas"]["PageLinks"]
+			meta: {
+				current_page: number
+				per_page: number
+				total: number
+				/** Format: date */
+				date: string
+				registry_state: components["schemas"]["RegistryState"]
+				others: components["schemas"]["Others"] | null
+			}
+		}
+		CandidateDay: {
+			/** Format: date */
+			date: string
+			visits_count: number
+			qualifies: boolean
+		}
+		Candidate: {
+			plate: string
+			/** @enum {string} */
+			status: "not_in_registry"
+			qualifying_days: number
+			total_visits: number
+			/** Format: date */
+			first_seen_date: string
+			/** Format: date */
+			last_seen_date: string
+			last_pass: {
+				id: number
+				/** Format: date-time */
+				visited_at: string
+			} | null
+			days: components["schemas"]["CandidateDay"][]
+		}
+		Thresholds: {
+			window_days: number
+			min_days: number
+			min_visits: number
+			floor_min_days: number
+			floor_min_visits: number
+		}
+		CandidatesPage: {
+			data: components["schemas"]["Candidate"][]
+			links?: components["schemas"]["PageLinks"]
+			meta: {
+				current_page: number
+				per_page: number
+				total: number
+				/** Format: date */
+				date: string
+				registry_state: components["schemas"]["RegistryState"]
+				thresholds: components["schemas"]["Thresholds"]
+				others: components["schemas"]["Others"] | null
+			}
+		}
+		RouteSummaryItem: {
+			route: components["schemas"]["RouteRef"]
+			carrier: string | null
+			quota: number | null
+			assigned_count: number
+			seen_assigned_count: number
+			unseen_30d_count: number
+			over_quota: boolean
+			no_active_contract: boolean
+		}
+		SummaryTotals: {
+			assigned_count: number
+			seen_assigned_count: number
+			unseen_30d_count: number
+		}
+		RoutesSummary: {
+			data: components["schemas"]["RouteSummaryItem"][]
+			totals: components["schemas"]["SummaryTotals"] | null
+			meta: {
+				/** Format: date */
+				date: string
+				registry_state: components["schemas"]["RegistryState"]
+				others: components["schemas"]["Others"] | null
+			}
 		}
 	}
-	responses: never
+	responses: {
+		/** @description Error with an optional machine code */
+		Error: {
+			headers: {
+				[name: string]: unknown
+			}
+			content: {
+				"application/json": components["schemas"]["ErrorResponse"]
+			}
+		}
+		/** @description Validation error */
+		ValidationError: {
+			headers: {
+				[name: string]: unknown
+			}
+			content: {
+				"application/json": components["schemas"]["ErrorResponse"]
+			}
+		}
+	}
 	parameters: {
-		CarId: number
-		/** @description Inclusive, YYYY-MM-DD. */
-		DateFrom: string
-		/** @description Inclusive, YYYY-MM-DD. */
-		DateTo: string
+		Id: number
+		/** @description Y-m-d, Asia/Tashkent calendar day. */
+		Date: string
 		Page: number
-		PageSize: number
+		PerPage: number
 	}
 	requestBodies: never
 	headers: never
@@ -197,24 +646,39 @@ export interface operations {
 			}
 		}
 		responses: {
-			/** @description Access token */
+			/** @description Token */
 			200: {
 				headers: {
 					[name: string]: unknown
 				}
 				content: {
-					"application/json": components["schemas"]["TokenResponse"]
+					"application/json": {
+						data: components["schemas"]["LoginResult"]
+					}
 				}
 			}
-			/** @description Wrong credentials */
-			401: {
+			401: components["responses"]["Error"]
+			422: components["responses"]["ValidationError"]
+			429: components["responses"]["Error"]
+		}
+	}
+	logout: {
+		parameters: {
+			query?: never
+			header?: never
+			path?: never
+			cookie?: never
+		}
+		requestBody?: never
+		responses: {
+			/** @description Token revoked */
+			204: {
 				headers: {
 					[name: string]: unknown
 				}
-				content: {
-					"application/json": components["schemas"]["ErrorResponse"]
-				}
+				content?: never
 			}
+			401: components["responses"]["Error"]
 		}
 	}
 	me: {
@@ -226,33 +690,25 @@ export interface operations {
 		}
 		requestBody?: never
 		responses: {
-			/** @description Current user */
+			/** @description Profile, scope and limits */
 			200: {
 				headers: {
 					[name: string]: unknown
 				}
 				content: {
-					"application/json": components["schemas"]["UserRead"]
+					"application/json": {
+						data: components["schemas"]["Me"]
+					}
 				}
 			}
-			/** @description Not authenticated */
-			401: {
-				headers: {
-					[name: string]: unknown
-				}
-				content: {
-					"application/json": components["schemas"]["ErrorResponse"]
-				}
-			}
+			401: components["responses"]["Error"]
 		}
 	}
-	carsStats: {
+	listRoutes: {
 		parameters: {
 			query?: {
-				/** @description Inclusive, YYYY-MM-DD. */
-				date_from?: components["parameters"]["DateFrom"]
-				/** @description Inclusive, YYYY-MM-DD. */
-				date_to?: components["parameters"]["DateTo"]
+				/** @description Y-m-d, Asia/Tashkent calendar day. */
+				date?: components["parameters"]["Date"]
 			}
 			header?: never
 			path?: never
@@ -260,105 +716,390 @@ export interface operations {
 		}
 		requestBody?: never
 		responses: {
-			/** @description Counters */
+			/** @description Routes with the contract current on `date` */
 			200: {
 				headers: {
 					[name: string]: unknown
 				}
 				content: {
-					"application/json": components["schemas"]["CarsStats"]
+					"application/json": {
+						data: components["schemas"]["RouteListItem"][]
+					}
 				}
 			}
+			422: components["responses"]["ValidationError"]
 		}
 	}
-	listCars: {
-		parameters: {
-			query?: {
-				/** @description Part of the plate number, case- and space-insensitive. */
-				search?: string
-				status?: components["schemas"]["LicenseStatus"]
-				/** @description Inclusive, YYYY-MM-DD. */
-				date_from?: components["parameters"]["DateFrom"]
-				/** @description Inclusive, YYYY-MM-DD. */
-				date_to?: components["parameters"]["DateTo"]
-				page?: components["parameters"]["Page"]
-				page_size?: components["parameters"]["PageSize"]
-			}
-			header?: never
-			path?: never
-			cookie?: never
-		}
-		requestBody?: never
-		responses: {
-			/** @description Page of cars */
-			200: {
-				headers: {
-					[name: string]: unknown
-				}
-				content: {
-					"application/json": components["schemas"]["CarsPage"]
-				}
-			}
-		}
-	}
-	getCar: {
+	getRoute: {
 		parameters: {
 			query?: never
 			header?: never
 			path: {
-				car_id: components["parameters"]["CarId"]
+				id: components["parameters"]["Id"]
 			}
 			cookie?: never
 		}
 		requestBody?: never
 		responses: {
-			/** @description One car */
+			/** @description Route with every contract and the assignment history */
 			200: {
 				headers: {
 					[name: string]: unknown
 				}
 				content: {
-					"application/json": components["schemas"]["CarRead"]
+					"application/json": {
+						data: components["schemas"]["RouteDetail"]
+					}
 				}
 			}
-			/** @description Not found */
-			404: {
+			404: components["responses"]["Error"]
+		}
+	}
+	uploadImport: {
+		parameters: {
+			query?: never
+			header?: never
+			path?: never
+			cookie?: never
+		}
+		requestBody: {
+			content: {
+				"multipart/form-data": {
+					/** Format: binary */
+					file: string
+				}
+			}
+		}
+		responses: {
+			/** @description Preview */
+			201: {
 				headers: {
 					[name: string]: unknown
 				}
 				content: {
-					"application/json": components["schemas"]["ErrorResponse"]
+					"application/json": {
+						data: components["schemas"]["Import"]
+					}
+				}
+			}
+			409: components["responses"]["Error"]
+			422: components["responses"]["ValidationError"]
+			429: components["responses"]["Error"]
+			503: components["responses"]["Error"]
+		}
+	}
+	getImport: {
+		parameters: {
+			query?: never
+			header?: never
+			path: {
+				id: components["parameters"]["Id"]
+			}
+			cookie?: never
+		}
+		requestBody?: never
+		responses: {
+			/** @description Preview (with rows) or the confirmed summary (without rows) */
+			200: {
+				headers: {
+					[name: string]: unknown
+				}
+				content: {
+					"application/json": {
+						data: components["schemas"]["Import"]
+					}
+				}
+			}
+			404: components["responses"]["Error"]
+		}
+	}
+	confirmImport: {
+		parameters: {
+			query?: never
+			header?: never
+			path: {
+				id: components["parameters"]["Id"]
+			}
+			cookie?: never
+		}
+		requestBody?: never
+		responses: {
+			/** @description Confirmed summary */
+			200: {
+				headers: {
+					[name: string]: unknown
+				}
+				content: {
+					"application/json": {
+						data: components["schemas"]["Import"]
+					}
+				}
+			}
+			404: components["responses"]["Error"]
+			409: components["responses"]["Error"]
+			422: components["responses"]["ValidationError"]
+		}
+	}
+	addAssignment: {
+		parameters: {
+			query?: never
+			header?: never
+			path?: never
+			cookie?: never
+		}
+		requestBody: {
+			content: {
+				"application/json": components["schemas"]["AssignmentCreate"]
+			}
+		}
+		responses: {
+			/** @description Created */
+			201: {
+				headers: {
+					[name: string]: unknown
+				}
+				content: {
+					"application/json": {
+						data: components["schemas"]["Assignment"]
+						warnings: components["schemas"]["Warning"][]
+					}
+				}
+			}
+			409: components["responses"]["Error"]
+			422: components["responses"]["ValidationError"]
+		}
+	}
+	closeAssignment: {
+		parameters: {
+			query?: never
+			header?: never
+			path: {
+				id: components["parameters"]["Id"]
+			}
+			cookie?: never
+		}
+		requestBody: {
+			content: {
+				"application/json": {
+					/**
+					 * Format: date
+					 * @description EXCLUSIVE: first day the assignment no longer applies
+					 */
+					until: string
 				}
 			}
 		}
+		responses: {
+			/** @description Closed */
+			200: {
+				headers: {
+					[name: string]: unknown
+				}
+				content: {
+					"application/json": {
+						data: components["schemas"]["Assignment"]
+					}
+				}
+			}
+			404: components["responses"]["Error"]
+			409: components["responses"]["Error"]
+			422: components["responses"]["ValidationError"]
+		}
 	}
-	carHistory: {
+	correctAssignment: {
+		parameters: {
+			query?: never
+			header?: never
+			path: {
+				id: components["parameters"]["Id"]
+			}
+			cookie?: never
+		}
+		requestBody: {
+			content: {
+				"application/json": {
+					plate: string
+					reason?: string
+				}
+			}
+		}
+		responses: {
+			/** @description Corrected */
+			200: {
+				headers: {
+					[name: string]: unknown
+				}
+				content: {
+					"application/json": {
+						data: components["schemas"]["Assignment"]
+						correction: {
+							previous_plate: string
+							new_plate: string
+							recomputed_visits_count: number
+						}
+					}
+				}
+			}
+			404: components["responses"]["Error"]
+			409: components["responses"]["Error"]
+			422: components["responses"]["ValidationError"]
+		}
+	}
+	listPasses: {
 		parameters: {
 			query?: {
-				/** @description Inclusive, YYYY-MM-DD. */
-				date_from?: components["parameters"]["DateFrom"]
-				/** @description Inclusive, YYYY-MM-DD. */
-				date_to?: components["parameters"]["DateTo"]
+				/** @description Y-m-d, Asia/Tashkent calendar day. */
+				date?: components["parameters"]["Date"]
+				status?: "permitted" | "expired"
 				page?: components["parameters"]["Page"]
-				page_size?: components["parameters"]["PageSize"]
+				per_page?: components["parameters"]["PerPage"]
+			}
+			header?: never
+			path?: never
+			cookie?: never
+		}
+		requestBody?: never
+		responses: {
+			/** @description Visits of registry plates on `date` */
+			200: {
+				headers: {
+					[name: string]: unknown
+				}
+				content: {
+					"application/json": components["schemas"]["PassesPage"]
+				}
+			}
+			422: components["responses"]["ValidationError"]
+		}
+	}
+	listCandidates: {
+		parameters: {
+			query?: {
+				/** @description Y-m-d, Asia/Tashkent calendar day. */
+				date?: components["parameters"]["Date"]
+				min_days?: number
+				min_visits?: number
+				page?: components["parameters"]["Page"]
+				per_page?: components["parameters"]["PerPage"]
+			}
+			header?: never
+			path?: never
+			cookie?: never
+		}
+		requestBody?: never
+		responses: {
+			/** @description Repeating plates that are not in the registry */
+			200: {
+				headers: {
+					[name: string]: unknown
+				}
+				content: {
+					"application/json": components["schemas"]["CandidatesPage"]
+				}
+			}
+			422: components["responses"]["ValidationError"]
+		}
+	}
+	routesSummary: {
+		parameters: {
+			query?: {
+				/** @description Y-m-d, Asia/Tashkent calendar day. */
+				date?: components["parameters"]["Date"]
+			}
+			header?: never
+			path?: never
+			cookie?: never
+		}
+		requestBody?: never
+		responses: {
+			/** @description Per-route summary for `date` */
+			200: {
+				headers: {
+					[name: string]: unknown
+				}
+				content: {
+					"application/json": components["schemas"]["RoutesSummary"]
+				}
+			}
+			422: components["responses"]["ValidationError"]
+		}
+	}
+	passImage: {
+		parameters: {
+			query?: {
+				/** @description Y-m-d, Asia/Tashkent calendar day. */
+				date?: components["parameters"]["Date"]
 			}
 			header?: never
 			path: {
-				car_id: components["parameters"]["CarId"]
+				id: components["parameters"]["Id"]
 			}
 			cookie?: never
 		}
 		requestBody?: never
 		responses: {
-			/** @description Page of detections */
+			/** @description Snapshot */
 			200: {
 				headers: {
 					[name: string]: unknown
 				}
 				content: {
-					"application/json": components["schemas"]["CarEventsPage"]
+					"image/jpeg": string
 				}
 			}
+			404: components["responses"]["Error"]
+			422: components["responses"]["ValidationError"]
+		}
+	}
+	exportPasses: {
+		parameters: {
+			query?: {
+				/** @description Y-m-d, Asia/Tashkent calendar day. */
+				date?: components["parameters"]["Date"]
+				status?: "permitted" | "expired"
+			}
+			header?: never
+			path?: never
+			cookie?: never
+		}
+		requestBody?: never
+		responses: {
+			/** @description xlsx */
+			200: {
+				headers: {
+					[name: string]: unknown
+				}
+				content: {
+					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string
+				}
+			}
+			422: components["responses"]["ValidationError"]
+		}
+	}
+	exportCandidates: {
+		parameters: {
+			query?: {
+				/** @description Y-m-d, Asia/Tashkent calendar day. */
+				date?: components["parameters"]["Date"]
+				min_days?: number
+				min_visits?: number
+			}
+			header?: never
+			path?: never
+			cookie?: never
+		}
+		requestBody?: never
+		responses: {
+			/** @description xlsx */
+			200: {
+				headers: {
+					[name: string]: unknown
+				}
+				content: {
+					"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string
+				}
+			}
+			422: components["responses"]["ValidationError"]
 		}
 	}
 }

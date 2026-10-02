@@ -1,5 +1,4 @@
-// A counter tile. Optionally a toggle: the dashboard uses the three tiles as the
-// status filter of the table below, so a pressed tile says which slice is shown.
+// A counter tile; optionally a toggle that says which slice of a list is shown.
 
 import { Card, Flex, Skeleton, Typography } from "antd"
 import type { FC, ReactNode } from "react"
@@ -10,7 +9,8 @@ const { Text } = Typography
 
 interface KpiCardProps {
 	title: string
-	value: number | undefined
+	/** `undefined` while loading; `null` when the day has no value (shown as a dash). */
+	value: number | null | undefined
 	icon?: ReactNode
 	/** Accent for the icon, the side bar and — when active — the border. */
 	color: string
@@ -72,6 +72,8 @@ export const KpiCard: FC<KpiCardProps> = ({ title, value, icon, color, footer, a
 								size={"large"}
 								style={{ width: 96 }}
 							/>
+						) : value === null ? (
+							"—"
 						) : (
 							<CountUp value={value} />
 						)}

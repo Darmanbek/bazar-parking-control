@@ -1,8 +1,8 @@
-// How often the live screens poll the backend. The parking lot changes by the
-// minute, so the dashboard re-reads itself instead of waiting for a click.
+// Live polling of today's screen. Every read is written to the audit log
+// (§5.4), so the floor is one minute.
 
-export const REFRESH_INTERVALS = [5_000, 10_000, 30_000, 60_000] as const
+export const REFRESH_INTERVALS = [60_000, 120_000, 300_000] as const
 
 export type RefreshInterval = (typeof REFRESH_INTERVALS)[number]
 
-export const DEFAULT_REFRESH_INTERVAL: RefreshInterval = 10_000
+export const DEFAULT_REFRESH_INTERVAL: RefreshInterval = 60_000

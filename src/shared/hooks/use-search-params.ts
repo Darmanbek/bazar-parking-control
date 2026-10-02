@@ -2,14 +2,14 @@
 // root route's `validateSearch` (src/pages/__root.tsx), so
 // `useSearch({ strict: false })` returns these fields already typed.
 //
-// Filters and pagination live in the URL so they survive a reload and a
-// filtered list stays shareable as a link.
+// Filters and pagination live in the URL so a view survives a reload and can be
+// shared as a link. No API response is ever put here.
 //
-//   setFilter  — anything that changes WHICH rows the list returns. Resets page.
-//   setParams  — everything else (the page itself).
+//   setFilter / setFilters — anything that changes WHICH rows a list returns. Resets the page.
+//   setParams              — everything else (the page itself).
 
 import { useNavigate, useSearch } from "@tanstack/react-router"
-import type { Schemas } from "src/shared/api"
+import { DEFAULT_PER_PAGE } from "src/shared/config"
 
 export interface PaginationState {
 	current: number
@@ -18,13 +18,18 @@ export interface PaginationState {
 
 export type RootSearch = {
 	page?: number
-	page_size?: number
-	/** Free-text plate search. */
-	search?: string
-	status?: Schemas["LicenseStatus"]
-	/** Date window as the API takes it (YYYY-MM-DD), written as a pair. */
-	date_from?: string
-	date_to?: string
+	per_page?: number
+	/** A Tashkent calendar day, `Y-m-d`. Absent = the screen's default day. */
+	date?: string
+	/** Passes filter: the API takes only these two (§7.8). */
+	status?: "permitted" | "expired"
+	/** Candidate thresholds as requested; the applied ones come back in meta.thresholds. */
+	min_days?: number
+	min_visits?: number
+	/** On-screen plate / route filter. Never sent to the API. */
+	q?: string
+	/** The import preview being looked at. */
+	import_id?: number
 }
 
 export const useSearchParams = () => {
@@ -40,8 +45,6 @@ export const useSearchParams = () => {
 		})
 	}
 
-	/** Set filter(s) and return to page 1 — page N of the previous result set is
-	 *  usually empty in the new one. */
 	const setFilters = (values: Partial<RootSearch>): void => setParams({ ...values, page: undefined })
 
 	const setFilter = <K extends keyof RootSearch>(key: K, value: RootSearch[K]): void =>
@@ -51,12 +54,12 @@ export const useSearchParams = () => {
 }
 
 /** Table pagination held in the URL. Default for lists. */
-export const useUrlPagination = (initial: PaginationState = { current: 1, pageSize: 10 }) => {
+export const useUrlPagination = (initial: PaginationState = { current: 1, pageSize: DEFAULT_PER_PAGE }) => {
 	const { search, setParams } = useSearchParams()
 
 	return {
 		current: search.page ?? initial.current,
-		pageSize: search.page_size ?? initial.pageSize,
-		onChange: (current: number, pageSize: number) => setParams({ page: current, page_size: pageSize }),
+		pageSize: search.per_page ?? initial.pageSize,
+		onChange: (current: number, pageSize: number) => setParams({ page: current, per_page: pageSize }),
 	}
 }

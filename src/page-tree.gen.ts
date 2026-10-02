@@ -12,7 +12,10 @@ import { Route as rootRouteImport } from "./pages/__root"
 import { Route as LayoutRouteImport } from "./pages/_layout"
 import { Route as LoginRouteImport } from "./pages/login"
 import { Route as LayoutIndexRouteImport } from "./pages/_layout/index"
-import { Route as LayoutCarsCarIdRouteImport } from "./pages/_layout/cars/$carId"
+import { Route as LayoutCandidatesRouteImport } from "./pages/_layout/candidates"
+import { Route as LayoutImportRouteImport } from "./pages/_layout/import"
+import { Route as LayoutRegistryIndexRouteImport } from "./pages/_layout/registry/index"
+import { Route as LayoutRegistryRouteIdRouteImport } from "./pages/_layout/registry/$routeId"
 
 const LayoutRoute = LayoutRouteImport.update({
   id: "/_layout",
@@ -28,35 +31,79 @@ const LayoutIndexRoute = LayoutIndexRouteImport.update({
   path: "/",
   getParentRoute: () => LayoutRoute,
 } as any)
-const LayoutCarsCarIdRoute = LayoutCarsCarIdRouteImport.update({
-  id: "/cars/$carId",
-  path: "/cars/$carId",
+const LayoutCandidatesRoute = LayoutCandidatesRouteImport.update({
+  id: "/candidates",
+  path: "/candidates",
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutImportRoute = LayoutImportRouteImport.update({
+  id: "/import",
+  path: "/import",
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutRegistryIndexRoute = LayoutRegistryIndexRouteImport.update({
+  id: "/registry/",
+  path: "/registry/",
+  getParentRoute: () => LayoutRoute,
+} as any)
+const LayoutRegistryRouteIdRoute = LayoutRegistryRouteIdRouteImport.update({
+  id: "/registry/$routeId",
+  path: "/registry/$routeId",
   getParentRoute: () => LayoutRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   "/": typeof LayoutIndexRoute
   "/login": typeof LoginRoute
-  "/cars/$carId": typeof LayoutCarsCarIdRoute
+  "/candidates": typeof LayoutCandidatesRoute
+  "/import": typeof LayoutImportRoute
+  "/registry/$routeId": typeof LayoutRegistryRouteIdRoute
+  "/registry/": typeof LayoutRegistryIndexRoute
 }
 export interface FileRoutesByTo {
   "/login": typeof LoginRoute
+  "/candidates": typeof LayoutCandidatesRoute
+  "/import": typeof LayoutImportRoute
   "/": typeof LayoutIndexRoute
-  "/cars/$carId": typeof LayoutCarsCarIdRoute
+  "/registry/$routeId": typeof LayoutRegistryRouteIdRoute
+  "/registry": typeof LayoutRegistryIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   "/_layout": typeof LayoutRouteWithChildren
   "/login": typeof LoginRoute
+  "/_layout/candidates": typeof LayoutCandidatesRoute
+  "/_layout/import": typeof LayoutImportRoute
   "/_layout/": typeof LayoutIndexRoute
-  "/_layout/cars/$carId": typeof LayoutCarsCarIdRoute
+  "/_layout/registry/$routeId": typeof LayoutRegistryRouteIdRoute
+  "/_layout/registry/": typeof LayoutRegistryIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: "/" | "/login" | "/cars/$carId"
+  fullPaths:
+    | "/"
+    | "/login"
+    | "/candidates"
+    | "/import"
+    | "/registry/$routeId"
+    | "/registry/"
   fileRoutesByTo: FileRoutesByTo
-  to: "/login" | "/" | "/cars/$carId"
-  id: "__root__" | "/_layout" | "/login" | "/_layout/" | "/_layout/cars/$carId"
+  to:
+    | "/login"
+    | "/candidates"
+    | "/import"
+    | "/"
+    | "/registry/$routeId"
+    | "/registry"
+  id:
+    | "__root__"
+    | "/_layout"
+    | "/login"
+    | "/_layout/candidates"
+    | "/_layout/import"
+    | "/_layout/"
+    | "/_layout/registry/$routeId"
+    | "/_layout/registry/"
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -87,24 +134,51 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof LayoutIndexRouteImport
       parentRoute: typeof LayoutRoute
     }
-    "/_layout/cars/$carId": {
-      id: "/_layout/cars/$carId"
-      path: "/cars/$carId"
-      fullPath: "/cars/$carId"
-      preLoaderRoute: typeof LayoutCarsCarIdRouteImport
+    "/_layout/candidates": {
+      id: "/_layout/candidates"
+      path: "/candidates"
+      fullPath: "/candidates"
+      preLoaderRoute: typeof LayoutCandidatesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    "/_layout/import": {
+      id: "/_layout/import"
+      path: "/import"
+      fullPath: "/import"
+      preLoaderRoute: typeof LayoutImportRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    "/_layout/registry/": {
+      id: "/_layout/registry/"
+      path: "/registry"
+      fullPath: "/registry/"
+      preLoaderRoute: typeof LayoutRegistryIndexRouteImport
+      parentRoute: typeof LayoutRoute
+    }
+    "/_layout/registry/$routeId": {
+      id: "/_layout/registry/$routeId"
+      path: "/registry/$routeId"
+      fullPath: "/registry/$routeId"
+      preLoaderRoute: typeof LayoutRegistryRouteIdRouteImport
       parentRoute: typeof LayoutRoute
     }
   }
 }
 
 interface LayoutRouteChildren {
+  LayoutCandidatesRoute: typeof LayoutCandidatesRoute
+  LayoutImportRoute: typeof LayoutImportRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
-  LayoutCarsCarIdRoute: typeof LayoutCarsCarIdRoute
+  LayoutRegistryRouteIdRoute: typeof LayoutRegistryRouteIdRoute
+  LayoutRegistryIndexRoute: typeof LayoutRegistryIndexRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
+  LayoutCandidatesRoute: LayoutCandidatesRoute,
+  LayoutImportRoute: LayoutImportRoute,
   LayoutIndexRoute: LayoutIndexRoute,
-  LayoutCarsCarIdRoute: LayoutCarsCarIdRoute,
+  LayoutRegistryRouteIdRoute: LayoutRegistryRouteIdRoute,
+  LayoutRegistryIndexRoute: LayoutRegistryIndexRoute,
 }
 
 const LayoutRouteWithChildren =

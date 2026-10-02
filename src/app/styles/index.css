@@ -14,7 +14,7 @@ body,
 }
 
 body {
-	font-family: "Onest", system-ui, "Segoe UI", Roboto, sans-serif;
+	font-family: "Onest Variable", system-ui, "Segoe UI", Roboto, sans-serif;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 }
@@ -116,4 +116,14 @@ body {
 		animation-iteration-count: 1 !important;
 		transition-duration: 0.001ms !important;
 	}
+}
+
+/* Closed assignments stay in the history (A1), greyed out. */
+.ant-table-wrapper .ant-table-tbody > tr.row-closed > td {
+	opacity: 0.5;
+}
+
+/* Preview rows with errors — the ones that block the confirmation. */
+.ant-table-wrapper .ant-table-tbody > tr.row-error > td {
+	background: rgba(220, 38, 38, 0.06);
 }

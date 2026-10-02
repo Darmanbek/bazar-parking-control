@@ -1,20 +1,26 @@
-// The operator's top bar: brand, the car finder, and the session controls.
+// The inspector's top bar: brand, the four sections, and the session controls.
 // Graphite in both themes — it is the frame of the screen, not a surface in it.
 
 import { LogoutOutlined, MoonOutlined, SunOutlined, UserOutlined } from "@ant-design/icons"
 import { useQueryClient } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
-import { Button, Flex, Layout, Tooltip } from "antd"
+import { useNavigate, useRouterState } from "@tanstack/react-router"
+import { Button, Flex, Layout, Menu, Tooltip } from "antd"
 import type { FC } from "react"
 import { useTranslation } from "react-i18next"
 import { $api } from "src/shared/api"
-import { useResponsive } from "src/shared/hooks"
+import { useMe, useResponsive } from "src/shared/hooks"
 import { useThemeStore } from "src/shared/store"
 import { Brandmark } from "src/shared/ui"
-import { tokenStorage } from "src/shared/utils"
-import { CarSearch } from "src/widgets/car"
+import { formatDate, tokenStorage } from "src/shared/utils"
 
 const ON_DARK = "rgba(255,255,255,0.86)"
+
+const SECTIONS = [
+	{ to: "/", key: "day" },
+	{ to: "/candidates", key: "candidates" },
+	{ to: "/registry", key: "registry" },
+	{ to: "/import", key: "import" },
+] as const
 
 export const AppHeader: FC = () => {
 	const { t } = useTranslation()
@@ -22,13 +28,20 @@ export const AppHeader: FC = () => {
 	const queryClient = useQueryClient()
 	const { isMobile, isDesktop } = useResponsive()
 	const { mode, toggle } = useThemeStore()
-	const me = $api.useQuery("get", "/api/v1/auth/me")
+	const pathname = useRouterState({ select: (s) => s.location.pathname })
+	const me = useMe()
 
+	// Revokes only this token (§7.1); a 401 here means "already signed out".
+	const logoutMutation = $api.useMutation("post", "/auth/logout", { meta: { silent: true } })
 	const logout = () => {
-		tokenStorage.remove()
-		queryClient.clear()
-		void navigate({ to: "/login" })
+		void logoutMutation.mutateAsync({}).finally(() => {
+			tokenStorage.remove()
+			queryClient.clear()
+			void navigate({ to: "/login" })
+		})
 	}
+
+	const active = SECTIONS.filter((s) => (s.to === "/" ? pathname === "/" : pathname.startsWith(s.to))).at(-1)?.to ?? "/"
 
 	return (
 		<Layout.Header
@@ -39,10 +52,6 @@ export const AppHeader: FC = () => {
 				display: "flex",
 				alignItems: "center",
 				gap: 16,
-				height: "auto",
-				minHeight: 64,
-				paddingBlock: isMobile ? 10 : 0,
-				flexWrap: isMobile ? "wrap" : "nowrap",
 				borderBottom: "1px solid rgba(255,255,255,0.06)",
 				backdropFilter: "saturate(160%) blur(8px)",
 				lineHeight: "normal",
@@ -60,28 +69,34 @@ export const AppHeader: FC = () => {
 						<div style={{ color: "#fff", fontWeight: 800, fontSize: 16, letterSpacing: "-0.01em" }}>
 							{t("app.title")}
 						</div>
-						<div style={{ color: "#f2b544", fontSize: 12, fontWeight: 500 }}>{t("app.subtitle")}</div>
+						<div style={{ color: "#f2b544", fontSize: 12, fontWeight: 500 }}>
+							{me.data?.scope.markets.map((m) => m.name).join(", ") || t("app.subtitle")}
+						</div>
 					</div>
 				)}
 			</Flex>
 
-			<Flex
-				justify={"center"}
-				style={{ minWidth: 0, order: isMobile ? 3 : 0, flex: isMobile ? "1 1 100%" : 1 }}
-			>
-				<CarSearch width={isMobile ? "100%" : 380} />
-			</Flex>
+			<Menu
+				theme={"dark"}
+				mode={"horizontal"}
+				selectedKeys={[active]}
+				onClick={({ key }) => void navigate({ to: key })}
+				items={SECTIONS.map((s) => ({ key: s.to, label: t(`nav.${s.key}`) }))}
+				style={{ flex: 1, minWidth: 0, background: "transparent", borderBottom: "none" }}
+			/>
 
 			<Flex
 				align={"center"}
 				gap={6}
-				style={{ marginLeft: isMobile ? "auto" : 0, flexShrink: 0 }}
+				style={{ flexShrink: 0 }}
 			>
 				{isDesktop && me.data ? (
-					<span style={{ color: ON_DARK, fontSize: 13, marginRight: 8, whiteSpace: "nowrap" }}>
-						<UserOutlined style={{ marginRight: 6, color: "#f2b544" }} />
-						{me.data.full_name}
-					</span>
+					<Tooltip title={t("common.account_until", { date: formatDate(me.data.account_expires_at.slice(0, 10)) })}>
+						<span style={{ color: ON_DARK, fontSize: 13, marginRight: 8, whiteSpace: "nowrap" }}>
+							<UserOutlined style={{ marginRight: 6, color: "#f2b544" }} />
+							{me.data.name}
+						</span>
+					</Tooltip>
 				) : null}
 				<Tooltip title={mode === "light" ? t("common.theme_dark") : t("common.theme_light")}>
 					<Button
@@ -97,6 +112,7 @@ export const AppHeader: FC = () => {
 						type={"text"}
 						aria-label={t("common.logout")}
 						icon={<LogoutOutlined />}
+						loading={logoutMutation.isPending}
 						onClick={logout}
 						style={{ color: ON_DARK }}
 					/>

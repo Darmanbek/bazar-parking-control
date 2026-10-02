@@ -25,3 +25,6 @@ dist-ssr
 
 # Playwright MCP artifacts
 .playwright-mcp
+
+# Internal contract / TZ documents — not for a public repo
+docs/
