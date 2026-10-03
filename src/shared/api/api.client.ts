@@ -6,8 +6,7 @@ import type { paths } from "./schema"
 // One sign-out per expiry, however many requests were in flight.
 let signingOut = false
 
-/** The login screen, under hash routing (no Vercel rewrites, H2). */
-const LOGIN_HASH = "#/login"
+const LOGIN_PATH = "/login"
 
 // Bearer token + JSON on every request; no cookies (§4.1, H4). The token is
 // read at request time, never captured when the client is built.
@@ -38,10 +37,7 @@ const authMiddleware: Middleware = {
 		if (body.code) logoutReason.set(body.code)
 		// A full navigation rather than a router push: it drops the in-memory
 		// query cache — the only place API answers live.
-		if (window.location.hash !== LOGIN_HASH) {
-			window.location.assign(`${window.location.pathname}${LOGIN_HASH}`)
-			window.location.reload()
-		}
+		if (window.location.pathname !== LOGIN_PATH) window.location.assign(LOGIN_PATH)
 		return response
 	},
 }

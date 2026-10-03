@@ -20,16 +20,16 @@ npm run build    # прод: VITE_API_BASE_URL из .env.production, без мо
 
 | Маршрут | Экран | API |
 |---|---|---|
-| `#/login` | Вход: `login` + пароль, причина выхода по `code` | `POST auth/login`, `GET me` |
-| `#/` | День: сводка по маршрутам, «Остальные» числом, заезды реестра, снимок, xlsx | `GET summary/routes`, `GET passes`, `GET passes/{id}/image`, `GET exports/passes` |
-| `#/candidates` | Кандидаты за закрытый день, K/N по `meta.thresholds`, снимок с тем же `date`, xlsx | `GET candidates`, `GET exports/candidates` |
-| `#/registry` | Реестр: маршруты и договор на дату | `GET routes` |
-| `#/registry/$routeId` | Договоры и история назначений; добавить / закрыть с даты / исправить номер (удаления нет) | `GET routes/{id}`, `POST assignments*` |
-| `#/import` | Загрузка Excel → предпросмотр → подтверждение | `POST registry/imports`, `GET …/{id}`, `POST …/{id}/confirm` |
+| `/login` | Вход: `login` + пароль, причина выхода по `code` | `POST auth/login`, `GET me` |
+| `/` | День: сводка по маршрутам, «Остальные» числом, заезды реестра, снимок, xlsx | `GET summary/routes`, `GET passes`, `GET passes/{id}/image`, `GET exports/passes` |
+| `/candidates` | Кандидаты за закрытый день, K/N по `meta.thresholds`, снимок с тем же `date`, xlsx | `GET candidates`, `GET exports/candidates` |
+| `/registry` | Реестр: маршруты и договор на дату | `GET routes` |
+| `/registry/$routeId` | Договоры и история назначений; добавить / закрыть с даты / исправить номер (удаления нет) | `GET routes/{id}`, `POST assignments*` |
+| `/import` | Загрузка Excel → предпросмотр → подтверждение | `POST registry/imports`, `GET …/{id}`, `POST …/{id}/confirm` |
 
 ## Как выполнены требования хостинга (ADR-0033)
 
-- Только статика, без functions, middleware и `rewrites` (H2): роутинг на **hash** (`/#/…`), поэтому Vercel не нужен SPA-fallback.
+- Только статика, без functions и edge middleware (H2). Единственное правило в `vercel.json` — SPA-fallback: любой путь отдаёт `index.html`, чтобы работали прямые ссылки (`/candidates`). Это не прокси: API через Vercel не идёт.
 - Браузер ходит в API напрямую с `Authorization: Bearer` и `Accept: application/json`, cookie не используются.
 - Шрифты включены в сборку (`@fontsource`), Google Fonts не используется (H6).
 - Снимки и xlsx получаются через `fetch` → Blob → `URL.createObjectURL`, URL освобождается при закрытии. В `localStorage` лежат только токен, его `expires_at` и настройки UI (§5.5).

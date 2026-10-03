@@ -1,14 +1,12 @@
-import { createHashHistory, createRouter } from "@tanstack/react-router"
+import { createRouter } from "@tanstack/react-router"
 import { routeTree } from "src/page-tree.gen.ts"
 import { ErrorBoundary, Loader, NotFound } from "src/widgets/router-boundary"
 
-// Hash history: Vercel serves the build as plain static files, and a deep link
-// like /candidates would otherwise need a `rewrites` rule — which the hosting
-// conditions rule out (H2, checklist §10). With `/#/candidates` the server only
-// ever serves index.html.
+// Browser history: a deep link like /candidates is answered with index.html by
+// the SPA fallback in vercel.json. That rule only serves the static page — it
+// never proxies the API, which the browser calls directly (H2).
 export const router = createRouter({
 	routeTree,
-	history: createHashHistory(),
 	defaultPreload: "intent",
 	defaultPendingComponent: Loader,
 	defaultNotFoundComponent: NotFound,
