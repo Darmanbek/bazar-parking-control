@@ -4,7 +4,7 @@
 // (§5.5). A 404 reads "unavailable" with no reason given (A18).
 
 import { CameraOutlined } from "@ant-design/icons"
-import { Button, Flex, Modal, Result, Spin, Tooltip } from "antd"
+import { Button, Flex, Image, Modal, Result, Spin, Tooltip } from "antd"
 import type { FC, ReactNode } from "react"
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
@@ -64,11 +64,15 @@ const SnapshotView: FC<{ passId: number; date?: string }> = ({ passId, date }) =
 			/>
 		)
 	}
+	// antd preview (zoom, rotate, full screen) works on the same object URL —
+	// no second request, so no second audit entry.
 	return (
-		<img
+		<Image
 			src={state.url}
 			alt={""}
-			style={{ width: "100%", borderRadius: 10, display: "block" }}
+			width={"100%"}
+			preview={true}
+			style={{ borderRadius: 10, display: "block" }}
 		/>
 	)
 }
