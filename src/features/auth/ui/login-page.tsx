@@ -19,6 +19,7 @@ import { useResponsive, useToken } from "src/shared/hooks"
 import { errorCode, errorCodeText, fieldErrors, getErrorMessage } from "src/shared/lib"
 import { Brandmark, PlateNumber } from "src/shared/ui"
 import { logoutReason, tokenStorage } from "src/shared/utils"
+import { LangSelect } from "src/widgets/shared"
 
 const { Title, Text } = Typography
 
@@ -152,8 +153,11 @@ export const LoginPage: FC = () => {
 				flex={1}
 				justify={"center"}
 				align={"center"}
-				style={{ padding: 24 }}
+				style={{ padding: 24, position: "relative" }}
 			>
+				<div style={{ position: "absolute", top: 20, right: 24 }}>
+					<LangSelect />
+				</div>
 				<div style={{ width: "100%", maxWidth: 400 }}>
 					{isDesktop ? null : (
 						<Flex

@@ -1,16 +1,26 @@
 import { App as AntdApp, ConfigProvider, theme } from "antd"
 import type { ThemeConfig } from "antd"
 import type { AliasToken } from "antd/es/theme/interface"
+import type { Locale } from "antd/es/locale"
 import ruRU from "antd/locale/ru_RU"
+import uzUZ from "antd/locale/uz_UZ"
+import dayjs from "dayjs"
 import { useEffect } from "react"
 import type { FC, ReactNode } from "react"
+import { useTranslation } from "react-i18next"
+import { DEFAULT_LANG, isLang, type Lang } from "src/shared/config"
 import { useThemeStore } from "src/shared/store"
+
+/* antd's own strings (DatePicker, pagination, empty states) and dayjs month
+ * names follow the interface language. */
+const ANTD_LOCALE: Record<Lang, Locale> = { ru: ruRU, uz: uzUZ }
+const DAYJS_LOCALE: Record<Lang, string> = { ru: "ru", uz: "uz-latn" }
 
 const FONT = "'Onest Variable', system-ui, 'Segoe UI', Roboto, sans-serif"
 
 /* "Asphalt & signal": a graphite shell for the operator's screen, one amber
  * signal colour for what is active, and the two status colours (green/red)
- * kept for licence status alone so they never mean anything else. */
+ * kept for verdicts alone so they never mean anything else. */
 const LIGHT_TOKEN: Partial<AliasToken> = {
 	colorPrimary: "#1c2330",
 	colorInfo: "#1c2330",
@@ -102,6 +112,12 @@ const cardConfig = (isDark: boolean) => ({
 export const AntdProvider: FC<{ children: ReactNode }> = ({ children }) => {
 	const mode = useThemeStore((s) => s.mode)
 	const isDark = mode === "dark"
+	const { i18n } = useTranslation()
+	const lang: Lang = isLang(i18n.language) ? i18n.language : DEFAULT_LANG
+
+	// dayjs keeps its locale globally; set it before the children render so the
+	// first paint after a switch already uses it.
+	if (dayjs.locale() !== DAYJS_LOCALE[lang]) dayjs.locale(DAYJS_LOCALE[lang])
 
 	// The only thing the ConfigProvider cannot express: the native colour-scheme
 	// hint (scrollbars, autofill) and a hook for the few CSS rules in index.css.
@@ -112,7 +128,7 @@ export const AntdProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
 	return (
 		<ConfigProvider
-			locale={ruRU}
+			locale={ANTD_LOCALE[lang]}
 			theme={buildTheme(isDark)}
 			card={cardConfig(isDark)}
 		>

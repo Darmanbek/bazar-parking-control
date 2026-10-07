@@ -1,5 +1,6 @@
 export * from "./day-filter.tsx"
 export * from "./kpi-card.tsx"
+export * from "./lang-select.tsx"
 export * from "./others-stat.tsx"
 export * from "./page-header.tsx"
 export * from "./registry-state-alert.tsx"

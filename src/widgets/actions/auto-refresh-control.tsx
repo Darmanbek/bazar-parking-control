@@ -41,7 +41,7 @@ export const AutoRefreshControl: FC<{ disabled?: boolean; disabledReason?: strin
 					onChange={setInterval}
 					popupMatchSelectWidth={false}
 					options={REFRESH_INTERVALS.map((ms) => ({ value: ms, label: t("refresh.every", { minutes: ms / 60_000 }) }))}
-					style={{ width: 120 }}
+					style={{ width: 160 }}
 				/>
 			</Flex>
 		</Tooltip>

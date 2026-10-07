@@ -33,6 +33,7 @@ export const ru = {
 		yesterday: "Вчера",
 		account_until: "Доступ до {{date}}",
 		index: "№",
+		language: "Язык",
 	},
 	state: {
 		error: "Что-то пошло не так",
@@ -57,8 +58,8 @@ export const ru = {
 	},
 	others: {
 		title: "Остальные проезды (не в реестре, не кандидаты)",
-		visits: "{{count}} заездов",
-		plates: "{{count}} номеров",
+		visits: "заездов: {{count}}",
+		plates: "номеров: {{count}}",
 	},
 	auth: {
 		title: "Вход в систему",

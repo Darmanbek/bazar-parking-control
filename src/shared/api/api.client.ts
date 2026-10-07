@@ -1,3 +1,4 @@
+import i18n from "i18next"
 import createClient, { type Middleware } from "openapi-fetch"
 import { API_URL } from "src/shared/config"
 import { logoutReason, tokenStorage } from "src/shared/utils"
@@ -21,7 +22,9 @@ const authMiddleware: Middleware = {
 		const token = tokenStorage.get()
 		if (token) request.headers.set("Authorization", `Bearer ${token}`)
 		request.headers.set("Accept", "application/json")
-		request.headers.set("Accept-Language", "ru")
+		// Server texts (e.g. import preview messages) in the interface language
+		// (§5.2). `i18next` is the singleton app/i18n initialises — a package import.
+		request.headers.set("Accept-Language", i18n.resolvedLanguage ?? i18n.language ?? "ru")
 		return request
 	},
 	async onResponse({ request, response }) {

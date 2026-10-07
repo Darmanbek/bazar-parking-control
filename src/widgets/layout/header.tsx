@@ -12,6 +12,7 @@ import { useMe, useResponsive } from "src/shared/hooks"
 import { useThemeStore } from "src/shared/store"
 import { Brandmark } from "src/shared/ui"
 import { formatDate, tokenStorage } from "src/shared/utils"
+import { LangSelect } from "src/widgets/shared"
 
 const ON_DARK = "rgba(255,255,255,0.86)"
 
@@ -98,6 +99,7 @@ export const AppHeader: FC = () => {
 						</span>
 					</Tooltip>
 				) : null}
+				<LangSelect onDark={true} />
 				<Tooltip title={mode === "light" ? t("common.theme_dark") : t("common.theme_light")}>
 					<Button
 						type={"text"}
